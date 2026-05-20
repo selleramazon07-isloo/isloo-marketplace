@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Search, Menu, X, MapPin, ChevronDown } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Menu, X, MapPin, ChevronDown, User, LogOut, LayoutDashboard } from 'lucide-react';
 import { CATEGORIES } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavbarProps {
   searchQuery: string;
@@ -14,6 +16,9 @@ export default function Navbar({ searchQuery, onSearchChange, onUploadClick, sel
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -21,20 +26,34 @@ export default function Navbar({ searchQuery, onSearchChange, onUploadClick, sel
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  useEffect(() => {
+    if (userMenuOpen) {
+      const close = () => setUserMenuOpen(false);
+      document.addEventListener('click', close);
+      return () => document.removeEventListener('click', close);
+    }
+  }, [userMenuOpen]);
+
+  const handleSignOut = async () => {
+    setUserMenuOpen(false);
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-xl shadow-sm border-b border-surface-100' : 'bg-white border-b border-surface-100'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* Main row */}
         <div className="flex items-center gap-3 h-16">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2.5 flex-shrink-0 group">
+          <Link to="/" className="flex items-center gap-2.5 flex-shrink-0 group">
             <div className="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center shadow-glow group-hover:shadow-glow-lg transition-shadow duration-300">
               <span className="text-white font-black text-lg leading-none">i</span>
             </div>
             <span className="text-2xl font-black tracking-tight hidden sm:block">
               <span className="text-brand-500">isloo</span><span className="text-brand-300">.com</span>
             </span>
-          </a>
+          </Link>
 
           {/* Location */}
           <button className="hidden md:flex items-center gap-1.5 text-sm bg-surface-50 rounded-full px-3.5 py-1.5 border border-surface-200 flex-shrink-0 hover:bg-brand-50 hover:border-brand-200 transition-all duration-200 group">
@@ -73,6 +92,54 @@ export default function Navbar({ searchQuery, onSearchChange, onUploadClick, sel
               <span className="text-lg leading-none">+</span>
               <span className="hidden sm:inline">Post Ad</span>
             </button>
+
+            {/* Auth-aware buttons */}
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setUserMenuOpen(!userMenuOpen); }}
+                  className="hidden md:flex items-center gap-2 bg-surface-50 border border-surface-200 rounded-xl px-3 py-2 hover:bg-brand-50 hover:border-brand-200 transition-all duration-200"
+                >
+                  <div className="w-6 h-6 bg-brand-500 rounded-lg flex items-center justify-center">
+                    <User size={12} className="text-white" />
+                  </div>
+                  <ChevronDown size={12} className="text-surface-400" />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl border border-surface-100 shadow-card-hover overflow-hidden animate-fade-in-down z-50">
+                    <div className="px-4 py-3 border-b border-surface-100">
+                      <p className="text-sm font-semibold text-surface-900 truncate">{user.email}</p>
+                      <p className="text-xs text-surface-400">Authenticated</p>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={() => { setUserMenuOpen(false); navigate('/dashboard'); }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-surface-700 hover:bg-brand-50 hover:text-brand-600 transition-colors text-left"
+                      >
+                        <LayoutDashboard size={15} />
+                        Dashboard
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-danger-600 hover:bg-danger-50 transition-colors text-left"
+                      >
+                        <LogOut size={15} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="hidden md:inline-flex items-center gap-1.5 text-sm font-medium text-surface-600 hover:text-brand-500 bg-surface-50 border border-surface-200 rounded-xl px-3.5 py-2 hover:bg-brand-50 hover:border-brand-200 transition-all duration-200"
+              >
+                <User size={14} />
+                Login
+              </Link>
+            )}
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -131,7 +198,7 @@ export default function Navbar({ searchQuery, onSearchChange, onUploadClick, sel
       {/* Mobile menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-surface-100 bg-white px-4 py-4 animate-fade-in-down">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-4">
             <button
               onClick={() => { onCategoryChange('All'); setMobileMenuOpen(false); }}
               className={`text-xs font-medium px-4 py-2 rounded-full transition-all duration-200 ${
@@ -155,6 +222,47 @@ export default function Navbar({ searchQuery, onSearchChange, onUploadClick, sel
                 {cat.name}
               </button>
             ))}
+          </div>
+
+          {/* Mobile auth links */}
+          <div className="border-t border-surface-100 pt-3 flex flex-col gap-2">
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-sm font-medium text-surface-700 hover:text-brand-500 px-3 py-2 rounded-lg hover:bg-brand-50 transition-colors"
+                >
+                  <LayoutDashboard size={16} />
+                  Dashboard
+                </Link>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); handleSignOut(); }}
+                  className="flex items-center gap-2 text-sm font-medium text-danger-600 hover:text-danger-700 px-3 py-2 rounded-lg hover:bg-danger-50 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-sm font-medium text-surface-700 hover:text-brand-500 px-3 py-2 rounded-lg hover:bg-brand-50 transition-colors"
+                >
+                  <User size={16} />
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="btn-primary text-xs justify-center"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

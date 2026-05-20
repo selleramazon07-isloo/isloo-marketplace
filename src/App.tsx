@@ -1,10 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import { supabase, Listing, CATEGORIES } from './lib/supabase';
 import Navbar from './components/Navbar';
 import HeroBanner from './components/HeroBanner';
 import ListingCard from './components/ListingCard';
 import ListingModal from './components/ListingModal';
 import UploadModal from './components/UploadModal';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import SignUpPage from './pages/SignUpPage';
+import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import DashboardPage from './pages/DashboardPage';
+import EditProfilePage from './pages/EditProfilePage';
 import { SlidersHorizontal, ChevronDown, Loader, SearchX } from 'lucide-react';
 
 const SORT_OPTIONS = [
@@ -14,7 +22,7 @@ const SORT_OPTIONS = [
   { value: 'price_desc', label: 'Price: High to Low' },
 ];
 
-export default function App() {
+function MarketplacePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,7 +101,6 @@ export default function App() {
 
       <HeroBanner />
 
-      {/* Main content */}
       <main id="listings" className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Category pills */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-4 scrollbar-hide">
@@ -230,7 +237,6 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* Featured section */}
             {featuredListings.length > 0 && (
               <section className="mb-8 animate-fade-in-up">
                 <div className="flex items-center gap-2.5 mb-4">
@@ -247,7 +253,6 @@ export default function App() {
               </section>
             )}
 
-            {/* Regular listings */}
             {regularListings.length > 0 && (
               <section className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
                 <div className="flex items-center gap-2.5 mb-4">
@@ -271,7 +276,6 @@ export default function App() {
       <footer className="mt-16 bg-white border-t border-surface-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-            {/* Brand */}
             <div>
               <div className="flex items-center gap-2.5 mb-3">
                 <div className="w-8 h-8 bg-brand-500 rounded-xl flex items-center justify-center shadow-glow">
@@ -286,7 +290,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Quick links */}
             <div>
               <h4 className="text-sm font-bold text-surface-800 mb-3">Quick Links</h4>
               <div className="flex flex-col gap-2">
@@ -298,7 +301,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Categories */}
             <div>
               <h4 className="text-sm font-bold text-surface-800 mb-3">Categories</h4>
               <div className="flex flex-col gap-2">
@@ -325,23 +327,34 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Modals */}
       {selectedListing && (
-        <ListingModal
-          listing={selectedListing}
-          onClose={() => setSelectedListing(null)}
-        />
+        <ListingModal listing={selectedListing} onClose={() => setSelectedListing(null)} />
       )}
 
       {showUploadModal && (
         <UploadModal
           onClose={() => setShowUploadModal(false)}
-          onSuccess={() => {
-            setShowUploadModal(false);
-            fetchListings();
-          }}
+          onSuccess={() => { setShowUploadModal(false); fetchListings(); }}
         />
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<MarketplacePage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+          <Route path="/edit-profile" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
