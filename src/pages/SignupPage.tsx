@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserPlus, Eye, EyeOff, Loader, ArrowLeft } from 'lucide-react';
 
-export default function SignUpPage() {
+export default function SignupPage() {
   const [form, setForm] = useState({
     full_name: '',
     email: '',
@@ -15,7 +15,7 @@ export default function SignUpPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signup } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -161,7 +161,7 @@ export default function SignUpPage() {
               ) : (
                 <>
                   <UserPlus size={16} />
-                  Sign Up
+                  Sign up
                 </>
               )}
             </button>
